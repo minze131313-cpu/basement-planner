@@ -36,15 +36,15 @@ function validated(raw) {
 let state = defaults();
 let loadedFromShare = false;
 let storageAvailable = true;
+function sharedPlanFromLocation() {
+  const encoded=new URLSearchParams(location.hash.slice(1)).get('plan');if(!encoded)return null;
+  if(encoded.length>65000)throw new Error('分享链接过长');
+  const binary=atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+  return validated(JSON.parse(new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)))));
+}
 try { const stored=localStorage.getItem(STORAGE_KEY); if(stored) state=validated(JSON.parse(stored)); } catch { /* A fresh example remains available. */ }
 try {
-  const encoded=new URLSearchParams(location.hash.slice(1)).get('plan');
-  if(encoded) {
-    if(encoded.length>65000) throw new Error();
-    const binary=atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
-    state=validated(JSON.parse(new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)))));
-    loadedFromShare=true;
-  }
+  const shared=sharedPlanFromLocation();if(shared){state=shared;loadedFromShare=true;}
 } catch { setTimeout(()=>toast('分享链接无法读取，已打开本机方案'),500); }
 let selectedId=null, view='3d', showCeiling=false;
 let history=[JSON.stringify(state)], historyIndex=0;
@@ -413,6 +413,10 @@ function wireUI() {
   $('import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>100000){toast('文件过大，请选择导出的方案文件');e.target.value='';return;}try{const next=validated(JSON.parse(await file.text()));if(next.room.doorOffset+next.room.doorWidth>ROOM.w)throw new Error();askConfirm('导入这个摆放方案？','导入会替换当前布局，之后仍可撤销。',()=>{state=next;selectedId=null;rebuildAll();commit();$('export-dialog').close();toast('方案已导入');});}catch{toast('无法读取，请选择本工具导出的 JSON 方案文件');}e.target.value='';};
   $('save-image').onclick=()=>{renderer.render(scene,camera);const canvas=document.createElement('canvas');canvas.width=renderer.domElement.width;canvas.height=renderer.domElement.height;const ctx=canvas.getContext('2d');ctx.fillStyle='#eff3e9';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(renderer.domElement,0,0);canvas.toBlob(blob=>{if(blob){downloadBlob(blob,`地下室视角-${stamp()}.png`);toast('当前视角图片已导出');}},'image/png');};
   $('reset-plan').onclick=()=>askConfirm('恢复初始示例摆放？','当前布局可先导出留存。恢复后仍可撤销。',()=>{state=defaults();selectedId=null;rebuildAll();commit();$('export-dialog').close();toast('已恢复初始摆放');});
+  window.addEventListener('hashchange',()=>{
+    try{const shared=sharedPlanFromLocation();if(!shared)return;state=shared;selectedId=null;document.querySelectorAll('dialog[open]').forEach(d=>d.close());rebuildAll();commit();toast('已载入分享方案，调整会保存在本机');}
+    catch{toast('分享链接无法读取，当前布局已保留');}
+  });
   document.addEventListener('keydown',e=>{
     if(e.target.matches('input,textarea')||document.querySelector('dialog[open]'))return;
     if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();restoreHistory(e.shiftKey?1:-1);}
