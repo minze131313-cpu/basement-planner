@@ -318,7 +318,8 @@ function resize() {
   if(!renderer)return;const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height,false);const aspect=width/Math.max(height,1);
   let span=view==='top'?5.25:(mobile()?6.55:6.15);
   if(aspect<.85)span=Math.max(span,(view==='3d'?5.55:4.6)/aspect);
-  camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;
+  const lift=mobile()?Math.min(35,height*.05)*span/height:0;
+  camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2-lift;camera.bottom=-span/2-lift;
   camera.updateProjectionMatrix();renderSoon();
 }
 function setView(value) {
