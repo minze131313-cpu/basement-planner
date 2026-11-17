@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f6f2">
+  <meta name="description" content="2.9×4米地下室的3D空间规划。拖动储物架、X型晾衣架和公路车，在手机上调整尺寸、层数和摆放。">
+  <title>地下室 · 3D空间规划</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m5 10 11-6 11 6v13l-11 6-11-6zM5 10l11 6 11-6M16 16v13M10 7l11 6v8"/></svg></div>
+    <div class="brand-copy"><h1>地下室<span class="desktop-only"> · 空间规划</span></h1><p>2.90 × 4.00 m <span> / </span> 11.6 m²</p></div>
+    <span class="save-indicator" id="save-state"><i></i>本机已保存</span>
+    <div class="header-actions">
+      <button class="icon-button" id="undo" title="撤销" aria-label="撤销"><svg viewBox="0 0 24 24"><path d="m9 5-5 5 5 5M4 10h9a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg></button>
+      <button class="icon-button" id="redo" title="重做" aria-label="重做"><svg viewBox="0 0 24 24"><path d="m15 5 5 5-5 5m5-5h-9a6 6 0 0 0 0 12" transform="translate(0 -2)"/></svg></button>
+      <span class="header-separator"></span>
+      <button class="icon-button" id="help-open" title="操作说明" aria-label="操作说明"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-1 .5-1.2 1-1.2 2.3M12 17h.01"/></svg></button>
+      <button class="primary-button" id="export-open"><svg viewBox="0 0 24 24"><path d="M12 15V3m-4 4 4-4 4 4M5 13v7h14v-7"/></svg><span>方案</span></button>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="stage" id="stage" aria-label="3D房间规划区域">
+      <div id="viewport" aria-label="可拖动陈设的三维房间"></div>
+      <div class="stage-toolbar">
+        <div class="segmented" aria-label="视角"><button id="view-3d" class="active" aria-pressed="true">3D 视角</button><button id="view-top" aria-pressed="false">俯视摆放</button></div>
+        <button class="tool-button" id="view-reset" title="复位视角" aria-label="复位视角"><svg viewBox="0 0 24 24"><path d="M4 9V4h5m11 11v5h-5M5 5a9 9 0 0 1 15 6M19 19A9 9 0 0 1 4 13"/></svg></button>
+        <button class="tool-button room-button" id="room-open"><svg viewBox="0 0 24 24"><path d="M4 20V4h16v16h-6m-4 0H4m6 0v-7h4v7"/></svg><span>房间</span></button>
+      </div>
+      <div class="stage-options"><label><input type="checkbox" id="show-ceiling"><span>顶部设施</span></label><label><input type="checkbox" id="snap" checked><span>5 cm 吸附</span></label></div>
+      <div class="room-caption"><span class="caption-line"></span> 你的地下室，按比例还原</div>
+      <div class="scene-message" id="scene-message" role="status"><span class="status-dot"></span><span>摆放就绪</span></div>
+      <div class="asset-tray" aria-label="添加陈设">
+        <div class="tray-heading"><span>添加陈设</span><span>轻点添加 / 拖入房间</span></div>
+        <div class="asset-row">
+          <button class="asset-card" data-add="shelf" aria-label="添加储物架"><svg viewBox="0 0 64 52" aria-hidden="true"><path d="M12 45V6h40v39M12 8h40M12 20h40M12 32h40M12 44h40M18 8v36M46 8v36"/><path class="preview-fill" d="M14 17h36v5H14zm0 12h36v5H14zm0 12h36v5H14z"/></svg><span>储物架</span><small>尺寸 / 层数可调</small><i>＋</i></button>
+          <button class="asset-card" data-add="drying" aria-label="添加X型落地晾衣架"><svg viewBox="0 0 64 52" aria-hidden="true"><path d="m16 45 24-35m7 35L23 10M16 10h30M23 16h16M16 45h8m15 0h8M16 10l-6 6h30l6-6M10 16v5"/></svg><span>X 型晾衣架</span><small>落地折叠款</small><i>＋</i></button>
+          <button class="asset-card" data-add="bike" aria-label="添加48码公路自行车"><svg viewBox="0 0 64 52" aria-hidden="true"><circle cx="15" cy="34" r="10"/><circle cx="49" cy="34" r="10"/><path d="m15 34 11-20 9 20H15l26-16m-6 16 6-20 8 20M23 12h8m7-1h7l2 4"/></svg><span>48 码公路车</span><small>独立摆放每一辆</small><i>＋</i></button>
+        </div>
+      </div>
+      <div class="gesture-hint" id="gesture-hint">拖动陈设摆放 · 空白处转动视角 · 双指缩放</div>
+      <div id="loading" class="loading"><div class="loading-symbol"></div><span>正在打开你的房间…</span></div>
+    </section>
+    <aside class="inspector" id="inspector" aria-label="陈设属性">
+      <button class="inspector-grip" id="sheet-toggle" aria-label="展开或收起陈设编辑"></button>
+      <div class="inspector-header"><div><span class="eyebrow">物件属性</span><h2 id="selection-name">选择一件陈设</h2><p id="selection-summary">在房间里轻点，即可调整</p></div><button class="sheet-edit" id="sheet-edit">编辑</button><button class="sheet-close" id="sheet-close" aria-label="收起编辑">完成</button></div>
+      <div class="inspector-scroll">
+        <div id="empty-selection" class="empty-selection"><div class="empty-cube">↖</div><p>空间的每一厘米，<br>都可以好好安排。</p><small>轻点陈设查看尺寸<br>按住拖动，试试新的位置</small></div>
+        <div id="item-editor" hidden>
+          <div class="section-heading">外廓尺寸 <span>厘米 cm</span></div>
+          <div class="dimension-fields">
+            <label><span id="width-label">长度</span><div class="unit-input"><input id="item-w" type="number" inputmode="decimal" min="20" max="350" step="5"><em>cm</em></div></label>
+            <label><span id="depth-label">深度</span><div class="unit-input"><input id="item-d" type="number" inputmode="decimal" min="15" max="200" step="5"><em>cm</em></div></label>
+            <label><span>高度</span><div class="unit-input"><input id="item-h" type="number" inputmode="decimal" min="20" max="300" step="5"><em>cm</em></div></label>
+          </div>
+          <div class="shelf-levels" id="shelf-levels"><label for="item-levels">储物层数</label><div class="stepper"><button id="level-minus" aria-label="减少一层">−</button><input id="item-levels" type="number" inputmode="numeric" min="2" max="10" step="1" aria-label="储物架层数"><button id="level-plus" aria-label="增加一层">＋</button></div></div>
+          <p class="field-note" id="item-note"></p>
+          <div class="section-heading">方向 <span id="angle-value">0°</span></div>
+          <div class="rotation-row"><button id="rotate-left" aria-label="向左旋转90度">↶ 90°</button><input id="item-angle" type="range" min="0" max="355" step="5" aria-label="旋转角度"><button id="rotate-right" aria-label="向右旋转90度">↷ 90°</button></div>
+          <div class="section-heading">精确位置 <span>距左墙 / 门所在墙</span></div>
+          <div class="position-fields"><label><span>中心距左墙</span><div class="unit-input"><input id="item-x" type="number" inputmode="decimal" min="0" max="400" step="5"><em>cm</em></div></label><label><span>中心距门墙</span><div class="unit-input"><input id="item-z" type="number" inputmode="decimal" min="0" max="600" step="5"><em>cm</em></div></label></div>
+          <div class="item-actions"><button id="duplicate"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>复制</button><button id="delete" class="delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>删除</button></div>
+          <div class="item-warning" id="item-warning" hidden></div>
+        </div>
+        <div class="inventory-section"><div class="section-heading">房间里的陈设 <span id="item-count">6 件</span></div><div id="inventory" class="inventory"></div></div>
+        <div class="inspector-footer">方案自动保存在当前浏览器。<br>在「方案」中导出或分享，可在另一部手机继续。</div>
+      </div>
+    </aside>
+  </main>
+  <dialog id="room-dialog"><form method="dialog"><div class="dialog-heading"><div><span class="eyebrow">房间参数</span><h2>从这间地下室开始</h2></div><button class="dialog-x" aria-label="关闭">×</button></div></form><div class="room-facts"><span>室内宽度 <b>290 cm</b></span><span>室内长度 <b>400 cm</b></span></div><div class="room-form"><label>室内净高<div class="unit-input"><input id="room-height" type="number" inputmode="decimal" min="220" max="400" step="1"><em>cm</em></div></label><label>门宽<div class="unit-input"><input id="door-width" type="number" inputmode="decimal" min="60" max="140" step="1"><em>cm</em></div></label><label>门左边距左墙<div class="unit-input"><input id="door-offset" type="number" inputmode="decimal" min="0" max="210" step="1"><em>cm</em></div></label></div><p class="dialog-note">净高暂按 267 cm；门位与设备外形沿用平面草图。风管参考高度 255 cm、排风扇 220 cm、对门墙上部泡沫 232 cm。高度测量基准与设备细节仍需实测核对。</p><label class="check-row"><input id="door-reserve" type="checkbox" checked>显示门口 90 cm 深的规划预留区</label><button class="primary-button full-width" id="room-apply">应用房间参数</button></dialog>
+  <dialog id="help-dialog"><form method="dialog"><div class="dialog-heading"><div><span class="eyebrow">一点小提示</span><h2>把房间摆成你想要的样子</h2></div><button class="dialog-x" aria-label="关闭">×</button></div></form><div class="help-steps"><p><b>01　添加与摆放</b><span>轻点下方陈设添加，也可以把卡片拖入房间。按住房间内的陈设即可移动。</span></p><p><b>02　看清与调整</b><span>空白处拖动转动视角，双指缩放。切换「俯视摆放」更容易对齐。选中物件后点「编辑」改尺寸、层数或方向。</span></p><p><b>03　保存与继续</b><span>改动自动保存在当前浏览器。「方案」可导出文件、生成分享链接，或保存当前视角图片。</span></p></div><p class="dialog-note">公路车为 48 码车架的示意模型，默认整车外廓 170 × 44 × 100 cm；请按实车调整。重叠提示按外廓判断，窄缝、交错车把等细节请结合实物确认。</p></dialog>
+  <dialog id="export-dialog"><form method="dialog"><div class="dialog-heading"><div><span class="eyebrow">方案管理</span><h2>留住这次摆放</h2></div><button class="dialog-x" aria-label="关闭">×</button></div></form><div class="export-actions"><button id="share-plan"><span>分享方案链接</span><small>在另一部手机打开，继续调整</small><b>↗</b></button><button id="download-plan"><span>导出方案文件</span><small>保存为文件，随时导入恢复</small><b>↓</b></button><button id="import-plan"><span>导入方案文件</span><small>载入之前保存的摆放</small><b>↑</b></button><button id="save-image"><span>保存当前视角图片</span><small>记录房间的 3D 或俯视效果</small><b>▧</b></button></div><button class="reset-button" id="reset-plan">恢复初始示例摆放</button><p class="dialog-note">分享链接包含当前陈设布局。自动保存仅限本机当前浏览器。</p></dialog>
+  <dialog id="confirm-dialog"><h2 id="confirm-title">恢复初始摆放？</h2><p id="confirm-copy">当前布局可先导出留存。</p><div class="confirm-actions"><button id="confirm-cancel">取消</button><button class="primary-button" id="confirm-ok">确认</button></div></dialog>
+  <input id="import-file" type="file" accept=".json,application/json" hidden>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js?v=1"></script>
+</body>
+</html>
