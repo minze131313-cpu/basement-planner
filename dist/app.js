@@ -48,7 +48,7 @@ try {
 } catch { setTimeout(()=>toast('分享链接无法读取，已打开本机方案'),500); }
 let selectedId=null, view='3d', showCeiling=false;
 let history=[JSON.stringify(state)], historyIndex=0;
-let renderer, scene, camera, controls, roomGroup, selectionGroup, fixedGroup;
+let renderer, scene, camera, controls, roomGroup, selectionGroup, fixedGroup, shadowLight;
 let floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
 const objects=new Map(), walls=[];
@@ -317,12 +317,13 @@ function tick() {frameRequested=false;if(!renderer)return;controls.update();upda
 function resize() {
   if(!renderer)return;const {width,height}=viewport.getBoundingClientRect();renderer.setSize(width,height,false);const aspect=width/Math.max(height,1);
   let span=view==='top'?5.25:(mobile()?6.55:6.15);
-  if(aspect<.85)span=Math.max(span,(view==='3d'?5.55:4.05)/aspect);
+  if(aspect<.85)span=Math.max(span,(view==='3d'?5.55:4.6)/aspect);
   camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;
   camera.updateProjectionMatrix();renderSoon();
 }
 function setView(value) {
   view=value;camera.zoom=1;controls.target.set(0,view==='top'?0:.7,0);
+  if(shadowLight)shadowLight.castShadow=value!=='top';
   if(value==='top'){camera.position.set(0,9,.001);controls.enableRotate=false;controls.minPolarAngle=0;controls.maxPolarAngle=.001;}
   else{camera.position.set(5.3,5.8,7.0);controls.enableRotate=true;controls.minPolarAngle=.1;controls.maxPolarAngle=Math.PI/2-.04;}
   controls.update();$('view-3d').classList.toggle('active',value==='3d');$('view-top').classList.toggle('active',value==='top');$('view-3d').setAttribute('aria-pressed',value==='3d');$('view-top').setAttribute('aria-pressed',value==='top');
@@ -438,7 +439,7 @@ function init() {
   camera=new THREE.OrthographicCamera(-4,4,4,-4,.01,60);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.16;controls.enablePan=true;controls.minZoom=.55;controls.maxZoom=2.8;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
   controls.addEventListener('change',()=>{if(!frameRequested)renderSoon();});controls.addEventListener('start',()=>{framesLeft=16;});
   scene.add(new THREE.HemisphereLight('#fcfff1','#9cae93',2.4));
-  const sun=new THREE.DirectionalLight('#fff8e1',3.5);sun.position.set(2,7,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-4;sun.shadow.camera.right=4;sun.shadow.camera.top=4;sun.shadow.camera.bottom=-4;sun.shadow.normalBias=.025;sun.shadow.bias=-.0002;scene.add(sun);
+  const sun=new THREE.DirectionalLight('#fff8e1',3.5);shadowLight=sun;sun.position.set(2,7,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-4;sun.shadow.camera.right=4;sun.shadow.camera.top=4;sun.shadow.camera.bottom=-4;sun.shadow.normalBias=.025;sun.shadow.bias=-.0002;scene.add(sun);
   const fill=new THREE.DirectionalLight('#eaf1e5',1);fill.position.set(-3,3,-2);scene.add(fill);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.ShadowMaterial({color:'#52623e',opacity:.11}));ground.rotation.x=-Math.PI/2;ground.position.y=-.18;ground.receiveShadow=true;scene.add(ground);
   wireUI();setView('3d');rebuildAll();setupPointerEvents();$('undo').disabled=true;$('redo').disabled=true;
