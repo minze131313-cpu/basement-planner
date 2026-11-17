@@ -1,0 +1,10 @@
+{
+  "name": "basement-room-planner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild dist/app.js --bundle --minify --format=esm --target=es2020 --alias:three=./dist/vendor/three.module.js --outfile=dist/planner.js --legal-comments=eof"
+  },
+  "devDependencies": { "esbuild": "0.28.2" }
+}
